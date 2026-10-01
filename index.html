@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Del tema a la pregunta — Tablero de investigación CRAI-UAO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --ink:#1A2433; --muted:#566274; --line:#D2D9E0;
+  --primary:#2C3E73; --primary-soft:#E3E8F5; --on-primary:#FFFFFF;
+  --c-pob:#24705F; --c-lugar:#76458A; --c-tiempo:#2C67A0; --c-var:#9C5A0E;
+  --t-pob:rgba(36,112,95,.12); --t-lugar:rgba(118,69,138,.12); --t-tiempo:rgba(44,103,160,.12); --t-var:rgba(156,90,14,.13);
+  --ok:#2A7448; --warn:#A8461F; --bad:#B03535;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Atkinson Hyperlegible", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161E; --surface:#19212C; --surface-2:#1F2835; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2E3947;
+    --primary:#9DB0EC; --primary-soft:#26304A; --on-primary:#11161E;
+    --c-pob:#72C4AF; --c-lugar:#C9A0DA; --c-tiempo:#86B6E6; --c-var:#E3A85C;
+    --t-pob:rgba(114,196,175,.16); --t-lugar:rgba(201,160,218,.16); --t-tiempo:rgba(134,182,230,.16); --t-var:rgba(227,168,92,.16);
+    --ok:#6CC28F; --warn:#E59362; --bad:#EC7D7D;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161E; --surface:#19212C; --surface-2:#1F2835; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2E3947;
+  --primary:#9DB0EC; --primary-soft:#26304A; --on-primary:#11161E;
+  --c-pob:#72C4AF; --c-lugar:#C9A0DA; --c-tiempo:#86B6E6; --c-var:#E3A85C;
+  --t-pob:rgba(114,196,175,.16); --t-lugar:rgba(201,160,218,.16); --t-tiempo:rgba(134,182,230,.16); --t-var:rgba(227,168,92,.16);
+  --ok:#6CC28F; --warn:#E59362; --bad:#EC7D7D;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* Header */
+.top{max-width:1360px;margin:0 auto;padding:28px 24px 8px;display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+.top h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.05;margin:0;letter-spacing:-.01em}
+.top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Buttons */
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.95rem}
+.btn:hover{border-color:var(--primary)}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.small{padding:5px 10px;font-size:.88rem}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.linkbtn{background:none;border:none;color:var(--primary);cursor:pointer;padding:2px 4px;font-size:.9rem;text-decoration:underline}
+
+/* Layout */
+.app{max-width:1360px;margin:0 auto;padding:16px 24px 48px;display:grid;grid-template-columns:210px minmax(0,1fr) 360px;gap:24px;align-items:start}
+.steps{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+.steps ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;counter-reset:s}
+.steps li button{width:100%;text-align:left;background:none;border:none;border-left:3px solid var(--line);padding:10px 12px;cursor:pointer;display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;color:var(--muted)}
+.steps li button .n{width:26px;height:26px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:.85rem;font-weight:700}
+.steps li button.done .n{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.steps li button[aria-current="step"]{border-left-color:var(--primary);color:var(--ink);font-weight:700;background:var(--primary-soft)}
+.steps .progress{margin-top:16px;font-size:.88rem;color:var(--muted);padding-left:15px}
+
+main.work{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px clamp(18px,3vw,36px) 32px;min-width:0}
+.work h2{font-family:var(--serif);font-size:1.7rem;line-height:1.15;margin:0 0 6px}
+.work .lead{color:var(--muted);margin:0 0 22px;max-width:68ch}
+.field{margin:0 0 20px}
+.field > label, .field > .lbl{display:block;font-weight:700;margin-bottom:4px}
+.field .hint{display:block;color:var(--muted);font-size:.9rem;margin-bottom:8px;max-width:68ch}
+input[type=text],textarea{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:10px 12px;line-height:1.45}
+textarea{resize:vertical;min-height:84px}
+input[type=text]:focus,textarea:focus{border-color:var(--primary);background:var(--surface)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.listrow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.listrow input{flex:1}
+.listrow .del{flex:none;width:36px;height:42px;border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;color:var(--muted);font-size:1.1rem}
+.listrow .del:hover{color:var(--bad);border-color:var(--bad)}
+.datarow{display:grid;grid-template-columns:1.6fr 1fr 36px;gap:8px;margin-bottom:8px}
+.datarow .del{width:36px;height:42px;border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;color:var(--muted);font-size:1.1rem}
+.marker{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.mk-pob{background:var(--c-pob)} .mk-lugar{background:var(--c-lugar)} .mk-tiempo{background:var(--c-tiempo)} .mk-var{background:var(--c-var)}
+
+/* Chips (radio) */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--primary);background:var(--primary-soft);font-weight:700}
+.chip-help{margin-top:10px;font-size:.92rem;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:10px 12px;max-width:68ch}
+
+/* Tree */
+.tree{margin:6px 0 26px;padding:18px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--line)}
+.tree .tier{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tree .leaf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.88rem;max-width:220px;text-align:center}
+.tree .tier-label{text-align:center;font-size:.82rem;color:var(--muted);margin:2px 0 8px}
+.tree .trunk{margin:12px auto;max-width:480px;text-align:center;background:var(--primary);color:var(--on-primary);border-radius:10px;padding:12px 16px;font-family:var(--serif);font-size:1.05rem;font-weight:600}
+.tree .trunk.empty{background:transparent;color:var(--muted);border:1.5px dashed var(--line);font-weight:400}
+.tree .stem{width:2px;height:16px;background:var(--line);margin:6px auto}
+.tree .empty-leaf{color:var(--muted);font-size:.88rem;font-style:italic}
+
+/* Checks */
+.checks{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.checks li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:.93rem;align-items:start}
+.checks .ic{font-weight:700;line-height:1.5}
+.checks .ok .ic{color:var(--ok)} .checks .no .ic{color:var(--warn)} .checks .na .ic{color:var(--muted)}
+.checks .na{color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 22px;background:var(--surface)}
+.box h3{margin:0 0 4px;font-size:1.05rem}
+.box .sub{margin:0;color:var(--muted);font-size:.9rem}
+
+/* Suggestions */
+.sugg{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sugg-item{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.sugg-item p{margin:0;font-family:var(--serif);font-size:1.02rem}
+
+/* FINER */
+.finer{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
+.finer label{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:.92rem;background:var(--surface-2)}
+.finer label b{display:block}
+.finer input{margin-top:4px;accent-color:var(--primary)}
+
+/* AI */
+.ai{border:1px solid var(--primary);border-radius:12px;padding:16px 18px;margin:8px 0 22px;background:var(--primary-soft)}
+.ai[hidden]{display:none}
+.ai h3{margin:0 0 4px;font-size:1.05rem}
+.ai .sub{margin:0 0 12px;font-size:.9rem;color:var(--muted)}
+.ai-out{margin-top:12px;background:var(--surface);border-radius:10px;padding:2px 16px;font-size:.95rem;max-height:520px;overflow:auto}
+.ai-out:empty{display:none}
+.ai-out ul,.ai-out ol{padding-left:20px}
+.ai-out p.h{font-weight:700;margin-bottom:2px}
+.ai-status{font-size:.9rem;color:var(--muted);margin-top:8px}
+
+.navrow{display:flex;justify-content:space-between;gap:12px;margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
+
+/* Live panel */
+.live{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h3{margin:0 0 10px;font-size:.95rem;color:var(--muted);font-weight:700}
+.q-live{font-family:var(--serif);font-size:1.32rem;line-height:1.42;margin:0}
+.q-live.empty{color:var(--muted);font-size:1.02rem;font-style:italic}
+.q-live mark{background:none;color:inherit;padding:0 1px;border-radius:2px;text-decoration-thickness:3px;text-underline-offset:4px;text-decoration-line:underline}
+mark.h-pob{text-decoration-color:var(--c-pob);background:var(--t-pob)}
+mark.h-lugar{text-decoration-color:var(--c-lugar);background:var(--t-lugar)}
+mark.h-tiempo{text-decoration-color:var(--c-tiempo);background:var(--t-tiempo)}
+mark.h-var{text-decoration-color:var(--c-var);background:var(--t-var)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:.84rem;color:var(--muted)}
+.legend span.on{color:var(--ink);font-weight:700}
+.prob-live{font-family:var(--serif);font-size:1.02rem;margin:0}
+.prob-live.empty{color:var(--muted);font-style:italic}
+.export{display:flex;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+
+@media (max-width:1180px){
+  .app{grid-template-columns:200px minmax(0,1fr)}
+  .live{grid-column:2;position:static}
+}
+@media (max-width:780px){
+  .app{grid-template-columns:minmax(0,1fr);padding:12px 14px 40px;gap:16px}
+  .top{padding:20px 14px 4px}
+  .steps{position:static}
+  .steps ol{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  .steps li{flex:none}
+  .steps li button{border-left:none;border-bottom:3px solid var(--line);grid-template-columns:26px auto;white-space:nowrap}
+  .steps li button[aria-current="step"]{border-bottom-color:var(--primary)}
+  .steps .progress{padding-left:2px;margin-top:6px}
+  .live{grid-column:1}
+  .grid2{grid-template-columns:1fr}
+  .datarow{grid-template-columns:1fr 36px}
+  .datarow input:nth-child(2){grid-column:1}
+  .datarow .del{grid-row:1 / span 2;grid-column:2;height:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Del tema a la pregunta</h1>
+    <p>Organiza tus ideas iniciales, delimita el problema y construye una pregunta de investigación clara. Tu avance se guarda en este navegador.</p>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost" id="btn-example" type="button">Cargar un ejemplo</button>
+    <button class="btn ghost" id="btn-reset" type="button">Empezar de nuevo</button>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="steps" aria-label="Pasos">
+    <ol id="steplist"></ol>
+    <div class="progress" id="progress"></div>
+  </nav>
+
+  <main class="work" id="work" tabindex="-1"></main>
+
+  <aside class="live" aria-label="Vista en vivo">
+    <div class="card">
+      <h3>Tu pregunta en construcción</h3>
+      <p class="q-live empty" id="q-live">Aparecerá aquí cuando la redactes en el paso 5.</p>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="card">
+      <h3>Problema central</h3>
+      <p class="prob-live empty" id="p-live">Lo definirás en el árbol del problema (paso 2).</p>
+    </div>
+    <div class="card">
+      <h3>Llévate tu trabajo</h3>
+      <div class="export">
+        <button class="btn small" id="btn-copy" type="button">Copiar todo</button>
+        <button class="btn small" id="btn-download" type="button" hidden>Descargar (.txt)</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Estado ---------- */
+var KEY = "crai-uao-del-tema-a-la-pregunta-v1";
+function blank(){
+  return {
+    tema:"", area:"", observacion:"", motivacion:"",
+    datos:[{dato:"",fuente:""}],
+    poblacion:"", lugar:"", tiempo:"",
+    problema:"", causas:["",""], efectos:["",""],
+    enfoque:"", alcance:"", variables:[""],
+    brecha:"", pertinencia:"", planteamiento:"",
+    pregunta:"", finer:{f:false,i:false,n:false,e:false,r:false}
+  };
+}
+var S = blank();
+var step = 0;
+try{
+  var raw = localStorage.getItem(KEY);
+  if(raw){ var o = JSON.parse(raw); if(o && o.S){ S = Object.assign(blank(), o.S); step = Math.min(4, Math.max(0, o.step|0)); } }
+}catch(e){}
+var saveT;
+function save(){
+  clearTimeout(saveT);
+  saveT = setTimeout(function(){ try{ localStorage.setItem(KEY, JSON.stringify({S:S, step:step})); }catch(e){} }, 300);
+}
+
+/* ---------- Utilidades ---------- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function t(s){ return String(s||"").trim().replace(/[.;,\s]+$/,""); }
+function filled(arr){ return arr.map(t).filter(Boolean); }
+function lcfirst(s){ s=t(s); if(s.length>1 && s[1]===s[1].toLowerCase()) return s[0].toLowerCase()+s.slice(1); return s; }
+function ucfirst(s){ s=String(s||"").trim(); return s ? s[0].toUpperCase()+s.slice(1) : s; }
+function joinY(a){ if(a.length<=1) return a.join(""); return a.slice(0,-1).join(", ")+" y "+a[a.length-1]; }
+function normCh(c){ return c.normalize("NFD")[0].toLowerCase(); }
+function norm(s){ var r=""; for(var i=0;i<s.length;i++) r+=normCh(s[i]); return r; }
+function words(s){ return String(s||"").trim().split(/\s+/).filter(Boolean).length; }
+function toast(msg){ var el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(function(){el.classList.remove("show");},2200); }
+
+var STEPS = [
+  {id:"inicio", name:"Punto de partida"},
+  {id:"arbol", name:"Árbol del problema"},
+  {id:"delim", name:"Delimitación"},
+  {id:"plant", name:"Planteamiento"},
+  {id:"preg", name:"Pregunta"}
+];
+function stepDone(i){
+  if(i===0) return !!(t(S.tema) && t(S.observacion));
+  if(i===1) return !!(t(S.problema) && filled(S.causas).length && filled(S.efectos).length);
+  if(i===2) return !!(S.enfoque && S.alcance && filled(S.variables).length && t(S.poblacion));
+  if(i===3) return words(S.planteamiento) >= 60;
+  if(i===4) return !!t(S.pregunta);
+  return false;
+}
+
+/* ---------- Navegación ---------- */
+function renderNav(){
+  var ol=document.getElementById("steplist"), h="";
+  STEPS.forEach(function(s,i){
+    h+='<li><button type="button" data-go="'+i+'" class="'+(stepDone(i)?"done":"")+'"'+(i===step?' aria-current="step"':'')+'><span class="n">'+(stepDone(i)?"✓":(i+1))+'</span><span>'+s.name+'</span></button></li>';
+  });
+  ol.innerHTML=h;
+  var n=STEPS.filter(function(_,i){return stepDone(i);}).length;
+  document.getElementById("progress").textContent = n+" de 5 pasos completos";
+}
+document.getElementById("steplist").addEventListener("click",function(e){
+  var b=e.target.closest("[data-go]"); if(!b) return; go(+b.dataset.go);
+});
+function go(i){ step=i; save(); render(); var w=document.getElementById("work"); w.focus({preventScroll:true}); if(window.innerWidth<1180) w.scrollIntoView({block:"start"}); else window.scrollTo({top:0}); }
+
+/* ---------- Componentes de campo ---------- */
+function fText(k,label,hint,ph){
+  return '<div class="field"><label for="f-'+k+'">'+label+'</label>'+(hint?'<span class="hint">'+hint+'</span>':'')+
+    '<input type="text" id="f-'+k+'" data-k="'+k+'" value="'+esc(S[k])+'" placeholder="'+esc(ph||"")+'"></div>';
+}
+function fArea(k,label,hint,ph,rows){
+  return '<div class="field"><label for="f-'+k+'">'+label+'</label>'+(hint?'<span class="hint">'+hint+'</span>':'')+
+    '<textarea id="f-'+k+'" data-k="'+k+'" rows="'+(rows||3)+'" placeholder="'+esc(ph||"")+'">'+esc(S[k])+'</textarea></div>';
+}
+function fList(k,label,hint,ph,addLabel,marker){
+  var h='<div class="field"><span class="lbl">'+(marker?'<span class="marker '+marker+'"></span>':'')+label+'</span>'+(hint?'<span class="hint">'+hint+'</span>':'');
+  S[k].forEach(function(v,i){
+    h+='<div class="listrow"><input type="text" aria-label="'+esc(label)+' '+(i+1)+'" data-list="'+k+'" data-i="'+i+'" value="'+esc(v)+'" placeholder="'+esc(ph)+'">'+
+       '<button type="button" class="del" data-del="'+k+'" data-i="'+i+'" aria-label="Quitar">×</button></div>';
+  });
+  return h+'<button type="button" class="btn small" data-add="'+k+'">'+addLabel+'</button></div>';
+}
+
+/* ---------- Pasos ---------- */
+function vStep0(){
+  var h='<h2>Punto de partida</h2><p class="lead">Escribe lo que ya tienes, aunque esté desordenado. Aquí no se evalúa la redacción: se trata de poner sobre la mesa la situación, los datos y el contexto.</p>';
+  h+=fText("tema","Tema general","Una frase amplia. Ej.: permanencia estudiantil, uso de IA en la escritura académica, gestión del agua en zonas rurales.","¿Sobre qué quieres investigar?");
+  h+=fText("area","Programa o disciplina","Desde qué campo lo abordas.","Ej.: Ingeniería Industrial, Comunicación Social, Psicología");
+  h+=fArea("observacion","¿Qué situación has observado?","Descríbela como un hecho, en tercera persona: qué pasa, dónde y a quién le pasa. Evita escribir la solución.","Ej.: Muchos estudiantes de primer semestre cancelan asignaturas de matemáticas antes de la semana 8…",4);
+  h+=fArea("motivacion","¿Por qué te interesa? (opcional)","Tu vínculo con el tema. No va en el planteamiento, pero te ayuda a sostener la motivación.","",2);
+  h+='<div class="field"><span class="lbl">Datos o evidencias que ya tienes</span><span class="hint">Cifras, hallazgos de otros estudios, documentos institucionales, noticias. Anota siempre de dónde salen: luego los citarás en APA.</span>';
+  S.datos.forEach(function(d,i){
+    h+='<div class="datarow"><input type="text" aria-label="Dato '+(i+1)+'" data-dl="'+i+'" data-sub="dato" value="'+esc(d.dato)+'" placeholder="Dato o hallazgo">'+
+       '<input type="text" aria-label="Fuente del dato '+(i+1)+'" data-dl="'+i+'" data-sub="fuente" value="'+esc(d.fuente)+'" placeholder="Fuente (autor, año)">'+
+       '<button type="button" class="del" data-deld="'+i+'" aria-label="Quitar dato">×</button></div>';
+  });
+  h+='<button type="button" class="btn small" data-addd="1">Agregar dato</button></div>';
+  return h;
+}
+
+function vStep1(){
+  var h='<h2>Árbol del problema</h2><p class="lead">Separa el problema de sus causas y de sus consecuencias. El problema central es una situación negativa observable; las causas la explican y los efectos muestran por qué importa.</p>';
+  h+='<div class="tree" id="tree" aria-live="polite"></div>';
+  h+=fArea("problema","Problema central","Una sola oración afirmativa que describa la situación problemática. Evita empezar con «falta de» o «no hay»: así el problema ya trae la solución adentro.","Ej.: Una proporción alta de estudiantes de primer semestre abandona sus estudios antes de terminar el primer año",2);
+  h+='<div class="grid2">';
+  h+=fList("causas","Causas","¿Qué origina o mantiene el problema?","Una causa","Agregar causa");
+  h+=fList("efectos","Efectos","¿Qué consecuencias tiene si nadie lo atiende?","Un efecto","Agregar efecto");
+  h+='</div>';
+  h+='<div class="box"><h3>Revisión del problema</h3><p class="sub">Se actualiza mientras escribes.</p><ul class="checks" id="checks-prob"></ul></div>';
+  return h;
+}
+
+var ALC = {
+  cuantitativo:[["exploratorio","Exploratorio"],["descriptivo","Descriptivo"],["correlacional","Correlacional"],["explicativo","Explicativo"]],
+  cualitativo:[["exploratorio","Exploratorio"],["descriptivo","Descriptivo"],["comprensivo","Comprensivo o interpretativo"]],
+  mixto:[["exploratorio","Exploratorio"],["descriptivo","Descriptivo"],["correlacional","Correlacional"],["explicativo","Explicativo"],["comprensivo","Comprensivo o interpretativo"]]
+};
+var ALC_HELP = {
+  exploratorio:"Para temas poco estudiados en tu contexto. Busca identificar aspectos, actores o tendencias iniciales.",
+  descriptivo:"Busca caracterizar cómo es o cómo se presenta un fenómeno: niveles, rasgos, frecuencias.",
+  correlacional:"Busca saber si dos o más variables se relacionan y con qué fuerza. Necesitas al menos dos variables.",
+  explicativo:"Busca causas o efectos: por qué ocurre algo o qué efecto tiene una variable sobre otra. Exige más control y más evidencia.",
+  comprensivo:"Busca comprender experiencias, significados o percepciones de las personas desde su propia perspectiva."
+};
+function vStep2(){
+  var h='<h2>Delimitación</h2><p class="lead">Una buena pregunta dice con precisión qué se estudia, en quiénes, dónde y cuándo. Estos datos alimentan la pregunta y aparecen resaltados en la vista en vivo.</p>';
+  h+='<div class="field"><span class="lbl">Enfoque</span><span class="hint">¿Vas a medir (cuantitativo), a comprender desde la experiencia de las personas (cualitativo) o a combinar ambos (mixto)?</span><div class="chips" role="group" aria-label="Enfoque">';
+  [["cuantitativo","Cuantitativo"],["cualitativo","Cualitativo"],["mixto","Mixto"]].forEach(function(o){
+    h+='<button type="button" class="chip" data-pick="enfoque" data-v="'+o[0]+'" aria-pressed="'+(S.enfoque===o[0])+'">'+o[1]+'</button>';
+  });
+  h+='</div></div>';
+  if(S.enfoque){
+    h+='<div class="field"><span class="lbl">Alcance</span><span class="hint">Qué tan lejos quieres llegar con los resultados.</span><div class="chips" role="group" aria-label="Alcance">';
+    ALC[S.enfoque].forEach(function(o){
+      h+='<button type="button" class="chip" data-pick="alcance" data-v="'+o[0]+'" aria-pressed="'+(S.alcance===o[0])+'">'+o[1]+'</button>';
+    });
+    h+='</div>'+(S.alcance && ALC_HELP[S.alcance] ? '<div class="chip-help">'+ALC_HELP[S.alcance]+'</div>' : '')+'</div>';
+  }
+  var vl = S.enfoque==="cualitativo" ? "Categorías de análisis" : S.enfoque==="mixto" ? "Variables o categorías" : "Variables";
+  var vh = S.enfoque==="cualitativo" ? "Los aspectos de la experiencia que vas a comprender. Ej.: las estrategias de afrontamiento, la percepción del acompañamiento." :
+           "Lo que vas a observar o medir, redactado como sustantivo. Ej.: el uso de los servicios de apoyo académico, el rendimiento en cálculo.";
+  h+=fList("variables",vl,vh,"Ej.: el rendimiento académico","Agregar","mk-var");
+  h+='<div class="field"><label for="f-poblacion"><span class="marker mk-pob"></span>Población o participantes</label><span class="hint">Quiénes, con la mayor precisión posible.</span><input type="text" id="f-poblacion" data-k="poblacion" value="'+esc(S.poblacion)+'" placeholder="Ej.: estudiantes de primer semestre de ingeniería"></div>';
+  h+='<div class="grid2">';
+  h+='<div class="field"><label for="f-lugar"><span class="marker mk-lugar"></span>Lugar o institución</label><input type="text" id="f-lugar" data-k="lugar" value="'+esc(S.lugar)+'" placeholder="Ej.: una universidad privada de Cali"></div>';
+  h+='<div class="field"><label for="f-tiempo"><span class="marker mk-tiempo"></span>Periodo</label><input type="text" id="f-tiempo" data-k="tiempo" value="'+esc(S.tiempo)+'" placeholder="Ej.: el periodo académico 2026-2"></div>';
+  h+='</div>';
+  return h;
+}
+
+function vStep3(){
+  var h='<h2>Planteamiento del problema</h2><p class="lead">El planteamiento convence al lector de que existe un problema que vale la pena investigar. Va de lo general a lo particular: contexto, evidencia, problema, lo que aún no se sabe y por qué importa.</p>';
+  h+=fArea("brecha","¿Qué no se sabe todavía?","El vacío de conocimiento: qué no han resuelto otros estudios, o qué no se ha estudiado en tu población o contexto. Este es el corazón de la justificación de tu pregunta.","Ej.: Hay estudios nacionales sobre deserción, pero poco se sabe sobre…",3);
+  h+=fArea("pertinencia","¿Por qué investigarlo ahora y a quién beneficia?","Utilidad práctica, social o académica de los resultados.","",2);
+  h+='<div class="field"><label for="f-planteamiento">Tu planteamiento</label><span class="hint">Puedes armar un primer borrador con lo que ya escribiste y luego reescribirlo con tu propia voz, conectando las ideas y agregando citas en APA.</span>'+
+     '<div style="margin-bottom:8px"><button type="button" class="btn small" id="btn-draft">Armar borrador con mis respuestas</button></div>'+
+     '<textarea id="f-planteamiento" data-k="planteamiento" rows="12" placeholder="Redacta aquí el planteamiento (entre 250 y 600 palabras es un buen rango para un anteproyecto).">'+esc(S.planteamiento)+'</textarea></div>';
+  h+='<div class="box"><h3>Revisión del planteamiento</h3><p class="sub">Verificaciones automáticas básicas.</p><ul class="checks" id="checks-plant"></ul></div>';
+  h+=aiBox("plant","Revisión del planteamiento con Claude","Recibe observaciones sobre claridad, coherencia y evidencia. Claude no reescribe tu texto: te señala qué ajustar.");
+  return h;
+}
+
+var FINER = [
+  ["f","Factible","Tienes acceso a los participantes, datos, tiempo y recursos."],
+  ["i","Interesante","Te motiva y le interesa a tu campo."],
+  ["n","Novedosa","Aporta algo que no está resuelto en tu contexto."],
+  ["e","Ética","Se puede hacer sin dañar a nadie y con consentimiento."],
+  ["r","Relevante","Sus resultados sirven a alguien: la disciplina, una comunidad, una institución."]
+];
+function vStep4(){
+  var h='<h2>Pregunta de investigación</h2><p class="lead">La pregunta convierte el problema en algo que se puede responder con datos. Parte de una de las propuestas o escribe la tuya, y ajústala hasta que pase las verificaciones.</p>';
+  var sg = suggestions();
+  h+='<div class="box"><h3>Propuestas a partir de tu delimitación</h3>';
+  if(!sg.length){
+    h+='<p class="sub">Completa el enfoque, el alcance y al menos una variable o categoría en el paso 3 para ver propuestas.</p>';
+  } else {
+    h+='<p class="sub">Son estructuras de partida, no la respuesta final. Revisa que suenen naturales y que correspondan a tu problema.</p><div class="sugg">';
+    sg.forEach(function(q,i){ h+='<div class="sugg-item"><p>'+esc(q)+'</p><button type="button" class="btn small" data-use="'+i+'">Usar</button></div>'; });
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div class="field"><label for="f-pregunta">Tu pregunta</label><span class="hint">Empieza con un interrogativo abierto (¿Qué…?, ¿Cómo…?, ¿Cuál…?, ¿En qué medida…?). Una sola pregunta, sin juicios de valor.</span>'+
+     '<textarea id="f-pregunta" data-k="pregunta" rows="3" placeholder="¿…?">'+esc(S.pregunta)+'</textarea></div>';
+  h+='<div class="box"><h3>Revisión de la pregunta</h3><p class="sub">Se actualiza mientras escribes.</p><ul class="checks" id="checks-preg"></ul></div>';
+  h+='<div class="box"><h3>Criterios FINER</h3><p class="sub">Autoevaluación: marca solo los que puedas sostener ante tu docente.</p><div class="finer">';
+  FINER.forEach(function(f){
+    h+='<label><input type="checkbox" data-finer="'+f[0]+'"'+(S.finer[f[0]]?" checked":"")+'><span><b>'+f[1]+'</b>'+f[2]+'</span></label>';
+  });
+  h+='</div></div>';
+  h+=aiBox("preg","Revisión de la pregunta con Claude","Recibe observaciones sobre coherencia con el problema, precisión y viabilidad, con dos reformulaciones de ejemplo para adaptar.");
+  return h;
+}
+
+function aiBox(kind,title,sub){
+  return '<section class="ai" data-ai="'+kind+'" hidden><h3>'+title+'</h3><p class="sub">'+sub+' Usa tu cuenta de Claude; la decisión final es tuya y de tu docente.</p>'+
+    '<button type="button" class="btn primary" data-ask="'+kind+'">Pedir retroalimentación</button> '+
+    '<button type="button" class="btn" data-stop="'+kind+'" hidden>Detener</button>'+
+    '<div class="ai-status" data-status="'+kind+'" aria-live="polite"></div><div class="ai-out" data-out="'+kind+'"></div></section>';
+}
+
+/* ---------- Render ---------- */
+function render(){
+  renderNav();
+  var w=document.getElementById("work");
+  var v=[vStep0,vStep1,vStep2,vStep3,vStep4][step]();
+  v+='<div class="navrow">'+(step>0?'<button type="button" class="btn" data-go="'+(step-1)+'">Anterior</button>':'<span></span>')+
+     (step<4?'<button type="button" class="btn primary" data-go="'+(step+1)+'">Siguiente: '+STEPS[step+1].name+'</button>':'<span></span>')+'</div>';
+  w.innerHTML=v;
+  if(sampleFn) w.querySelectorAll("[data-ai]").forEach(function(s){ s.hidden=false; });
+  live();
+}
+
+function live(){
+  renderNav();
+  // problema
+  var p=document.getElementById("p-live");
+  if(t(S.problema)){ p.textContent=ucfirst(t(S.problema))+"."; p.classList.remove("empty"); }
+  else { p.textContent="Lo definirás en el árbol del problema (paso 2)."; p.classList.add("empty"); }
+  // pregunta
+  var q=document.getElementById("q-live");
+  if(t(S.pregunta)){ q.innerHTML=highlight(S.pregunta.trim()); q.classList.remove("empty"); }
+  else { q.textContent="Aparecerá aquí cuando la redactes en el paso 5."; q.classList.add("empty"); }
+  var found = found_();
+  document.getElementById("legend").innerHTML =
+    '<span class="'+(found.pob?"on":"")+'"><span class="marker mk-pob"></span>Población</span>'+
+    '<span class="'+(found.lugar?"on":"")+'"><span class="marker mk-lugar"></span>Lugar</span>'+
+    '<span class="'+(found.tiempo?"on":"")+'"><span class="marker mk-tiempo"></span>Periodo</span>'+
+    '<span class="'+(found.var?"on":"")+'"><span class="marker mk-var"></span>'+(S.enfoque==="cualitativo"?"Categorías":"Variables")+'</span>';
+  // específicos del paso
+  if(step===1){ renderTree(); renderChecks("checks-prob", checksProblema()); }
+  if(step===3){ renderChecks("checks-plant", checksPlant()); }
+  if(step===4){ renderChecks("checks-preg", checksPregunta()); }
+}
+
+function renderTree(){
+  var el=document.getElementById("tree"); if(!el) return;
+  var ef=filled(S.efectos), ca=filled(S.causas);
+  var h='<div class="tier-label">Efectos</div><div class="tier">'+(ef.length?ef.map(function(x){return '<span class="leaf">'+esc(ucfirst(x))+'</span>';}).join(""):'<span class="empty-leaf">Aún sin efectos</span>')+'</div>';
+  h+='<div class="stem"></div><div class="trunk'+(t(S.problema)?'':' empty')+'">'+(t(S.problema)?esc(ucfirst(t(S.problema))):'Problema central')+'</div><div class="stem"></div>';
+  h+='<div class="tier">'+(ca.length?ca.map(function(x){return '<span class="leaf">'+esc(ucfirst(x))+'</span>';}).join(""):'<span class="empty-leaf">Aún sin causas</span>')+'</div><div class="tier-label" style="margin-top:8px">Causas</div>';
+  el.innerHTML=h;
+}
+
+function renderChecks(id,list){
+  var el=document.getElementById(id); if(!el) return;
+  el.innerHTML=list.map(function(c){
+    var cls=c[0]===true?"ok":c[0]===false?"no":"na", ic=c[0]===true?"✓":c[0]===false?"!":"–";
+    return '<li class="'+cls+'"><span class="ic" aria-hidden="true">'+ic+'</span><span>'+c[1]+'</span></li>';
+  }).join("");
+}
+
+/* ---------- Verificaciones ---------- */
+var BAD_START=/^(la\s+|el\s+)?(falta|ausencia|carencia|necesidad|inexistencia)\s+de\b|^no\s+(hay|existe|existen|se\s+cuenta)/i;
+function checksProblema(){
+  var p=t(S.problema), r=[];
+  if(!p){ r.push([null,"Escribe el problema central para revisarlo."]); }
+  else{
+    r.push([!BAD_START.test(p), BAD_START.test(p) ? "El problema está redactado como ausencia de algo («falta de…», «no hay…»). Describe la situación negativa que se observa, no lo que falta." : "No está formulado como la ausencia de una solución."]);
+    r.push([p.indexOf("?")<0, p.indexOf("?")<0 ? "Está redactado como afirmación, no como pregunta." : "El problema central va en forma afirmativa; la pregunta viene después."]);
+    var w=words(p); r.push([w>=8&&w<=45, w<8 ? "Es muy corto: agrega quién se ve afectado y qué ocurre." : w>45 ? "Es muy largo: deja las causas y los efectos en sus propias casillas." : "Tiene una extensión adecuada para una sola idea."]);
+  }
+  var ca=filled(S.causas).length, ef=filled(S.efectos).length;
+  r.push([ca>=2, ca>=2 ? "Identificaste "+ca+" causas." : "Identifica al menos dos causas posibles."]);
+  r.push([ef>=2, ef>=2 ? "Identificaste "+ef+" efectos." : "Identifica al menos dos efectos o consecuencias."]);
+  var withSrc=S.datos.filter(function(d){return t(d.dato)&&t(d.fuente);}).length;
+  r.push([withSrc>=1, withSrc>=1 ? "Tienes "+withSrc+" dato(s) con fuente que respaldan el problema." : "Vuelve al paso 1 y agrega al menos un dato con su fuente: sin evidencia, el problema es solo una percepción."]);
+  return r;
+}
+function checksPlant(){
+  var p=S.planteamiento||"", w=words(p), np=norm(p), r=[];
+  if(!w){ return [[null,"Escribe o arma un borrador para revisarlo."]]; }
+  r.push([w>=250&&w<=700, w<250 ? "Lleva "+w+" palabras. Un planteamiento de anteproyecto suele estar entre 250 y 600." : w>700 ? "Lleva "+w+" palabras. Puede estar extenso: revisa si hay ideas repetidas o que pertenecen al marco teórico." : "Lleva "+w+" palabras, una extensión adecuada."]);
+  var cites=(p.match(/\(([^()]*\d{4}[a-z]?)\)/g)||[]).length;
+  r.push([cites>=2, cites>=2 ? "Incluye "+cites+" citas con año entre paréntesis." : "Incluye pocas o ninguna cita (autor, año). Respalda contexto y datos con fuentes en APA."]);
+  if(t(S.poblacion)) r.push([np.indexOf(norm(t(S.poblacion)).slice(0,18))>=0, "Menciona la población definida en la delimitación."]);
+  r.push([!!t(S.brecha), t(S.brecha) ? "Identificaste el vacío de conocimiento." : "Falta señalar qué no se sabe todavía: es lo que justifica tu investigación."]);
+  r.push([p.indexOf("?")>=0 ? null : true, p.indexOf("?")>=0 ? "Hay signos de interrogación en el texto: verifica que la pregunta principal quede para el cierre o en su propio apartado." : "El texto argumenta en forma afirmativa."]);
+  return r;
+}
+var YESNO=/^¿?\s*(es|son|será|serán|existe|existen|hay|puede|pueden|influye|influyen|afecta|afectan|tiene|tienen|debe|deben|se\s+relaciona|incide|inciden|mejora|mejoran)\b/i;
+var VALUE=/\b(mejor|mejores|peor|peores|deber[ií]a|deber[ií]an|bueno|buena|malo|mala|adecuad[oa]s?|correct[oa]s?|ideal)\b/i;
+function checksPregunta(){
+  var q=(S.pregunta||"").trim(), r=[];
+  if(!q) return [[null,"Escribe tu pregunta para revisarla."]];
+  var nq=norm(q), f=found_();
+  r.push([q[0]==="¿"&&q[q.length-1]==="?", q[0]==="¿"&&q[q.length-1]==="?" ? "Abre y cierra con signos de interrogación." : "En español, la pregunta abre con «¿» y cierra con «?»."]);
+  r.push([(q.match(/\?/g)||[]).length===1, (q.match(/\?/g)||[]).length===1 ? "Es una sola pregunta." : "Hay más de una pregunta. Deja una principal; las demás pueden ser subpreguntas."]);
+  var yn=YESNO.test(q);
+  r.push([!yn, yn ? "Puede responderse con sí o no. Reformúlala con ¿Qué…?, ¿Cómo…?, ¿Cuál…? o ¿En qué medida…?" : "Es abierta: no se responde con sí o no."]);
+  var vj=VALUE.test(q);
+  r.push([!vj, vj ? "Contiene un juicio de valor («mejor», «debería», «adecuado»…). La investigación describe, relaciona o explica; no prescribe." : "No contiene juicios de valor."]);
+  r.push([t(S.poblacion)?f.pob:null, !t(S.poblacion) ? "Define la población en el paso 3." : f.pob ? "Incluye la población." : "No encuentro la población tal como la definiste en el paso 3."]);
+  r.push([t(S.lugar)?f.lugar:null, !t(S.lugar) ? "Define el lugar en el paso 3." : f.lugar ? "Incluye el lugar." : "No encuentro el lugar tal como lo definiste."]);
+  r.push([t(S.tiempo)?f.tiempo:null, !t(S.tiempo) ? "Define el periodo en el paso 3." : f.tiempo ? "Incluye el periodo." : "No encuentro el periodo tal como lo definiste."]);
+  var vs=filled(S.variables), nv=vs.filter(function(v){return nq.indexOf(norm(v))>=0;}).length, lbl=S.enfoque==="cualitativo"?"categoría":"variable";
+  r.push([vs.length?nv>=1:null, !vs.length ? "Define variables o categorías en el paso 3." : nv>=1 ? "Incluye "+nv+" "+lbl+(nv>1?"s":"")+" de tu delimitación." : "No aparece ninguna "+lbl+" tal como la escribiste en el paso 3."]);
+  if(S.alcance==="correlacional"||S.alcance==="explicativo") r.push([nv>=2, nv>=2 ? "Relaciona al menos dos variables, como exige el alcance "+S.alcance+"." : "El alcance "+S.alcance+" necesita al menos dos variables en la pregunta."]);
+  var w=words(q); r.push([w>=12&&w<=55, w<12 ? "Es muy corta: probablemente le falta delimitación." : w>55 ? "Es muy larga ("+w+" palabras). Simplifica sin perder población, lugar y periodo." : "Tiene una extensión adecuada ("+w+" palabras)."]);
+  if(t(S.problema)){
+    var pw=norm(S.problema).split(/[^a-zñ]+/).filter(function(x){return x.length>5;});
+    var share=pw.filter(function(x){return nq.indexOf(x)>=0;}).length;
+    var vshare=vs.some(function(v){return norm(S.problema).indexOf(norm(v).split(" ").pop())>=0 && nq.indexOf(norm(v))>=0;});
+    r.push([share>=1||vshare, share>=1||vshare ? "Retoma términos del problema central." : "No comparte términos con el problema central. Verifica que la pregunta responda a ese problema y no a otro."]);
+  }
+  return r;
+}
+
+/* ---------- Resaltado ---------- */
+function ranges(q){
+  var nq=norm(q), out=[];
+  function add(txt,cls){
+    txt=t(txt); if(txt.length<3) return;
+    var nt=norm(txt), i=nq.indexOf(nt);
+    if(i>=0) out.push([i,i+nt.length,cls]);
+  }
+  add(S.poblacion,"pob"); add(S.lugar,"lugar"); add(S.tiempo,"tiempo");
+  filled(S.variables).forEach(function(v){ add(v,"var"); });
+  out.sort(function(a,b){return a[0]-b[0] || (b[1]-b[0])-(a[1]-a[0]);});
+  var res=[], end=-1;
+  out.forEach(function(r){ if(r[0]>=end){ res.push(r); end=r[1]; } });
+  return res;
+}
+function found_(){
+  var q=S.pregunta||"", f={pob:false,lugar:false,tiempo:false,var:false};
+  ranges(q).forEach(function(r){ f[r[2]]=true; });
+  return f;
+}
+function highlight(q){
+  var rs=ranges(q), h="", pos=0;
+  rs.forEach(function(r){ h+=esc(q.slice(pos,r[0]))+'<mark class="h-'+r[2]+'">'+esc(q.slice(r[0],r[1]))+'</mark>'; pos=r[1]; });
+  return h+esc(q.slice(pos));
+}
+
+/* ---------- Propuestas de pregunta ---------- */
+function suggestions(){
+  var vs=filled(S.variables);
+  if(!S.alcance||!vs.length) return [];
+  var pob=t(S.poblacion), lug=t(S.lugar), tie=t(S.tiempo);
+  var v1=lcfirst(vs[0]), v2=vs[1]?lcfirst(vs[1]):"[segunda variable]";
+  var ctx=[pob?"en "+pob:"", lug?"de "+lug:"", tie?"durante "+tie:""].filter(Boolean).join(" ");
+  var ctxNoPob=[lug?"en "+lug:"", tie?"durante "+tie:""].filter(Boolean).join(" ");
+  var who=pob||"los participantes";
+  var T={
+    exploratorio:["¿Qué aspectos caracterizan "+v1+" "+ctx+"?","¿Cómo se presenta "+v1+" "+ctx+"?"],
+    descriptivo:["¿Cuáles son las características de "+v1+" "+ctx+"?","¿Cuál es el nivel de "+v1+" "+ctx+"?"],
+    correlacional:["¿Qué relación existe entre "+v1+" y "+v2+" "+ctx+"?","¿En qué medida se relaciona "+v1+" con "+v2+" "+ctx+"?"],
+    explicativo:["¿Cuál es el efecto de "+v1+" sobre "+v2+" "+ctx+"?","¿Qué factores explican "+v1+" "+ctx+"?"],
+    comprensivo:["¿Cómo comprenden "+who+" "+v1+" "+ctxNoPob+"?","¿Qué significados construyen "+who+" en torno a "+v1+" "+ctxNoPob+"?"]
+  };
+  return (T[S.alcance]||[]).map(function(s){ return s.replace(/\s+/g," ").replace(/\s+\?/g,"?"); });
+}
+
+/* ---------- Borrador del planteamiento ---------- */
+function buildDraft(){
+  var parts=[], p1=[];
+  if(t(S.observacion)) p1.push(ucfirst(t(S.observacion))+".");
+  S.datos.filter(function(d){return t(d.dato);}).forEach(function(d){
+    p1.push(t(d.fuente) ? "De acuerdo con "+t(d.fuente)+", "+lcfirst(d.dato)+"." : ucfirst(t(d.dato))+" [agregar fuente].");
+  });
+  if(p1.length) parts.push(p1.join(" "));
+  var p2=[];
+  if(t(S.problema)){
+    var s="En este contexto, el problema central es que "+lcfirst(S.problema);
+    if(t(S.poblacion)) s+=", situación que afecta a "+t(S.poblacion);
+    if(t(S.lugar)) s+=" de "+t(S.lugar);
+    p2.push(s+".");
+  }
+  var ca=filled(S.causas).map(lcfirst), ef=filled(S.efectos).map(lcfirst);
+  if(ca.length) p2.push("Esta situación se asocia con "+joinY(ca)+".");
+  if(ef.length) p2.push("De no atenderse, puede generar "+joinY(ef)+".");
+  if(p2.length) parts.push(p2.join(" "));
+  var p3=[];
+  if(t(S.brecha)) p3.push(ucfirst(t(S.brecha))+".");
+  if(t(S.pertinencia)) p3.push(ucfirst(t(S.pertinencia))+".");
+  if(p3.length) parts.push(p3.join(" "));
+  return parts.join("\n\n");
+}
+
+/* ---------- Eventos ---------- */
+var work=document.getElementById("work");
+work.addEventListener("input",function(e){
+  var el=e.target;
+  if(el.dataset.k){ S[el.dataset.k]=el.value; }
+  else if(el.dataset.list){ S[el.dataset.list][+el.dataset.i]=el.value; }
+  else if(el.dataset.dl!=null){ S.datos[+el.dataset.dl][el.dataset.sub]=el.value; }
+  else return;
+  save(); live();
+});
+work.addEventListener("change",function(e){
+  var el=e.target;
+  if(el.dataset.finer){ S.finer[el.dataset.finer]=el.checked; save(); }
+});
+work.addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.go!=null){ go(+b.dataset.go); return; }
+  if(b.dataset.add){ S[b.dataset.add].push(""); save(); render(); focusLast('[data-list="'+b.dataset.add+'"]'); return; }
+  if(b.dataset.del){ var a=S[b.dataset.del]; a.splice(+b.dataset.i,1); if(!a.length) a.push(""); save(); render(); return; }
+  if(b.dataset.addd){ S.datos.push({dato:"",fuente:""}); save(); render(); focusLast('[data-sub="dato"]'); return; }
+  if(b.dataset.deld!=null){ S.datos.splice(+b.dataset.deld,1); if(!S.datos.length) S.datos.push({dato:"",fuente:""}); save(); render(); return; }
+  if(b.dataset.pick){
+    S[b.dataset.pick]=b.dataset.v;
+    if(b.dataset.pick==="enfoque" && !ALC[S.enfoque].some(function(o){return o[0]===S.alcance;})) S.alcance="";
+    save(); render(); return;
+  }
+  if(b.dataset.use!=null){
+    var sg=suggestions()[+b.dataset.use];
+    if(t(S.pregunta) && S.pregunta.trim()!==sg && !confirm("¿Reemplazar la pregunta que ya escribiste por esta propuesta?")) return;
+    S.pregunta=sg; save(); var ta=document.getElementById("f-pregunta"); ta.value=sg; live(); ta.focus(); return;
+  }
+  if(b.id==="btn-draft"){
+    var d=buildDraft();
+    if(!d){ toast("Completa los pasos 1 y 2 para armar el borrador."); return; }
+    if(t(S.planteamiento) && !confirm("Esto reemplazará el texto actual del planteamiento. ¿Continuar?")) return;
+    S.planteamiento=d; save(); document.getElementById("f-planteamiento").value=d; live(); toast("Borrador listo. Ahora reescríbelo con tu voz."); return;
+  }
+  if(b.dataset.ask){ ask(b.dataset.ask); return; }
+  if(b.dataset.stop){ if(ctl[b.dataset.stop]) ctl[b.dataset.stop].abort(); return; }
+});
+function focusLast(sel){ var els=work.querySelectorAll(sel); if(els.length) els[els.length-1].focus(); }
+
+/* ---------- Ejemplo y reinicio ---------- */
+var EXAMPLE={
+  tema:"Permanencia estudiantil en el primer año",
+  area:"Ingeniería",
+  observacion:"Muchos estudiantes de primer semestre de ingeniería cancelan asignaturas de matemáticas o el semestre completo antes de la semana 8, y en las tutorías manifiestan dificultades para adaptarse a las exigencias universitarias",
+  motivacion:"Acompaño tutorías de primer semestre y veo el problema de cerca.",
+  datos:[{dato:"La tasa de deserción en primer semestre de ingeniería fue cercana al 18 % (dato de ejemplo)",fuente:"el informe institucional de permanencia (2025)"},
+         {dato:"Buena parte de quienes abandonan la educación superior lo hacen en los primeros semestres (verificar cifra)",fuente:"el Ministerio de Educación Nacional (SPADIES)"}],
+  poblacion:"estudiantes de primer semestre de ingeniería",
+  lugar:"una universidad privada de Cali",
+  tiempo:"el periodo académico 2026-2",
+  problema:"Una proporción alta de estudiantes de primer semestre de ingeniería abandona sus estudios antes de terminar el primer año",
+  causas:["Bajo rendimiento en los cursos de matemáticas básicas","Dificultades de adaptación a la vida universitaria","Poco uso de los servicios de apoyo académico"],
+  efectos:["Pérdida de recursos para las familias y la institución","Abandono del proyecto de formación profesional","Disminución de los indicadores de graduación"],
+  enfoque:"cuantitativo", alcance:"correlacional",
+  variables:["el uso de los servicios de apoyo académico","la intención de permanencia"],
+  brecha:"Existen estudios nacionales sobre deserción, pero se conoce poco sobre cómo el uso de los servicios de apoyo académico se relaciona con la intención de permanencia en primer semestre en esta institución",
+  pertinencia:"Los resultados pueden orientar a las facultades y a los servicios de apoyo para fortalecer el acompañamiento en el primer año",
+  planteamiento:"",
+  pregunta:"",
+  finer:{f:false,i:false,n:false,e:false,r:false}
+};
+document.getElementById("btn-example").addEventListener("click",function(){
+  if(anyContent() && !confirm("El ejemplo reemplazará lo que has escrito. ¿Continuar?")) return;
+  S=JSON.parse(JSON.stringify(EXAMPLE)); step=1; save(); render(); toast("Ejemplo cargado. Explóralo paso a paso.");
+});
+document.getElementById("btn-reset").addEventListener("click",function(){
+  if(anyContent() && !confirm("Se borrará todo lo que has escrito en este tablero. ¿Continuar?")) return;
+  S=blank(); step=0; save(); render(); toast("Tablero en blanco.");
+});
+function anyContent(){ return JSON.stringify(S)!==JSON.stringify(blank()); }
+
+/* ---------- Exportar ---------- */
+function exportText(){
+  var L=[], sep="\n";
+  L.push("DEL TEMA A LA PREGUNTA — Tablero de investigación (CRAI-UAO)");
+  L.push("");
+  L.push("1. PUNTO DE PARTIDA");
+  L.push("Tema: "+t(S.tema)); L.push("Programa o disciplina: "+t(S.area));
+  L.push("Situación observada: "+t(S.observacion));
+  if(t(S.motivacion)) L.push("Motivación: "+t(S.motivacion));
+  var ds=S.datos.filter(function(d){return t(d.dato);});
+  if(ds.length){ L.push("Datos y evidencias:"); ds.forEach(function(d){ L.push("  - "+t(d.dato)+(t(d.fuente)?" (Fuente: "+t(d.fuente)+")":"")); }); }
+  L.push(""); L.push("2. ÁRBOL DEL PROBLEMA");
+  L.push("Problema central: "+t(S.problema));
+  L.push("Causas:"); filled(S.causas).forEach(function(c){L.push("  - "+c);});
+  L.push("Efectos:"); filled(S.efectos).forEach(function(c){L.push("  - "+c);});
+  L.push(""); L.push("3. DELIMITACIÓN");
+  L.push("Enfoque: "+(S.enfoque||"")+"   Alcance: "+(S.alcance||""));
+  L.push((S.enfoque==="cualitativo"?"Categorías: ":"Variables: ")+filled(S.variables).join("; "));
+  L.push("Población: "+t(S.poblacion)); L.push("Lugar: "+t(S.lugar)); L.push("Periodo: "+t(S.tiempo));
+  L.push(""); L.push("4. PLANTEAMIENTO DEL PROBLEMA");
+  if(t(S.brecha)) L.push("Vacío de conocimiento: "+t(S.brecha));
+  if(t(S.pertinencia)) L.push("Pertinencia: "+t(S.pertinencia));
+  L.push(""); L.push((S.planteamiento||"").trim());
+  L.push(""); L.push("5. PREGUNTA DE INVESTIGACIÓN");
+  L.push((S.pregunta||"").trim());
+  var fz=FINER.filter(function(f){return S.finer[f[0]];}).map(function(f){return f[1];});
+  if(fz.length) L.push("Criterios FINER que considero cumplidos: "+fz.join(", "));
+  return L.join(sep);
+}
+document.getElementById("btn-copy").addEventListener("click",function(){
+  var txt=exportText();
+  function fallback(){
+    var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("Copiado al portapapeles."); }catch(e){ toast("No se pudo copiar. Usa la descarga."); }
+    ta.remove();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){toast("Copiado al portapapeles.");},fallback); }
+  else fallback();
+});
+
+/* ---------- Capacidades: descargas y Claude ---------- */
+var downloads=null, sampleFn=null, ctl={};
+function fileName(){ return "planteamiento-y-pregunta"+(t(S.tema)?"-"+norm(t(S.tema)).replace(/[^a-z0-9]+/g,"-").slice(0,40):"")+".txt"; }
+function nativeDownload(){
+  var b=document.getElementById("btn-download"); if(!b.hidden) return; b.hidden=false;
+  b.addEventListener("click",function(){
+    var blob=new Blob(["\ufeff"+exportText()],{type:"text/plain;charset=utf-8"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileName();
+    document.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},500);
+    toast("Archivo descargado.");
+  });
+}
+if(!(window.claude && typeof window.claude.use==="function")){ nativeDownload(); }
+else{
+  window.claude.use("downloads").then(function(d){
+    if(!d){ nativeDownload(); return; } downloads=d;
+    var b=document.getElementById("btn-download"); b.hidden=false;
+    b.addEventListener("click",function(){
+      downloads.save({filename:fileName(),data:exportText()}).then(function(){toast("Archivo descargado.");}).catch(function(e){
+        if(e&&e.code==="declined") return;
+        if(e&&e.code==="rate_limited"){ toast("Espera un momento e inténtalo de nuevo."); return; }
+        b.hidden=true; toast("La descarga no está disponible aquí. Usa «Copiar todo».");
+      });
+    });
+  }).catch(function(){});
+  window.claude.use("sample").then(function(s){
+    if(!s) return; sampleFn=s;
+    work.querySelectorAll("[data-ai]").forEach(function(x){ x.hidden=false; });
+  }).catch(function(){});
+}
+
+function context(){
+  return [
+    "Tema: "+t(S.tema), "Disciplina: "+t(S.area), "Situación observada: "+t(S.observacion),
+    "Datos: "+S.datos.filter(function(d){return t(d.dato);}).map(function(d){return t(d.dato)+" (fuente: "+(t(d.fuente)||"sin fuente")+")";}).join(" | "),
+    "Problema central: "+t(S.problema), "Causas: "+filled(S.causas).join("; "), "Efectos: "+filled(S.efectos).join("; "),
+    "Enfoque: "+(S.enfoque||"sin definir")+". Alcance: "+(S.alcance||"sin definir"),
+    "Variables o categorías: "+filled(S.variables).join("; "),
+    "Población: "+t(S.poblacion)+". Lugar: "+t(S.lugar)+". Periodo: "+t(S.tiempo),
+    "Vacío de conocimiento: "+t(S.brecha), "Pertinencia: "+t(S.pertinencia)
+  ].join("\n");
+}
+var ROLE="Eres tutor o tutora de metodología de la investigación en un centro de apoyo a la investigación (CRAI) de una universidad colombiana. Acompañas a estudiantes de seminario de investigación que preparan su anteproyecto de grado. Tu tono es cercano, claro y exigente a la vez. Escribe en español, tuteando al estudiante. No inventes datos ni fuentes. No escribas el trabajo por el estudiante.";
+function prompt(kind){
+  if(kind==="plant"){
+    return ROLE+"\n\nInformación que el estudiante organizó:\n"+context()+"\n\nPlanteamiento del problema redactado por el estudiante:\n\"\"\"\n"+(S.planteamiento||"").trim()+"\n\"\"\"\n\n"+
+      "Revisa el planteamiento sin reescribirlo. Responde en máximo 280 palabras con esta estructura exacta:\n"+
+      "**Lo que funciona**\n- (1 o 2 puntos concretos)\n**Lo que debes ajustar**\n- (3 o 4 puntos concretos; cita entre comillas la frase a revisar cuando aplique; considera: ir de lo general a lo particular, evidencia con fuentes, claridad del problema central, vacío de conocimiento explícito, coherencia entre causas, problema y efectos)\n**Para pensar**\n- (una pregunta que ayude al estudiante a profundizar)\n"+
+      "Usa solo viñetas con «- » y negritas con **. Sin saludos ni cierres.";
+  }
+  return ROLE+"\n\nInformación que el estudiante organizó:\n"+context()+"\n\nPregunta de investigación propuesta:\n\""+(S.pregunta||"").trim()+"\"\n\n"+
+    "Evalúa la pregunta. Responde en máximo 300 palabras con esta estructura exacta:\n"+
+    "**Lo que funciona**\n- (1 o 2 puntos)\n**Lo que debes ajustar**\n- (2 a 4 puntos sobre: coherencia con el problema central, correspondencia con el enfoque y el alcance, precisión de variables o categorías, delimitación de población, lugar y tiempo, viabilidad para un trabajo de grado)\n"+
+    "**Dos reformulaciones de ejemplo**\n1. (pregunta)\n2. (pregunta)\n**Antes de decidir**\n- (una recomendación breve para discutir con su docente)\n"+
+    "Las reformulaciones deben usar los mismos elementos que el estudiante definió, sin agregar variables nuevas. Usa solo viñetas, numeración y negritas con **. Sin saludos ni cierres.";
+}
+function canAsk(kind){
+  if(kind==="plant" && words(S.planteamiento)<40) return "Escribe al menos un párrafo de planteamiento antes de pedir retroalimentación.";
+  if(kind==="preg" && !t(S.pregunta)) return "Escribe tu pregunta antes de pedir retroalimentación.";
+  return "";
+}
+function md(s){
+  var lines=esc(s).split(/\n/), h="", list=null;
+  function close(){ if(list){ h+="</"+list+">"; list=null; } }
+  lines.forEach(function(l){
+    var x=l.trim();
+    var inl=function(z){ return z.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>"); };
+    if(!x){ close(); return; }
+    var m;
+    if((m=x.match(/^[-*•]\s+(.*)$/))){ if(list!=="ul"){ close(); h+="<ul>"; list="ul"; } h+="<li>"+inl(m[1])+"</li>"; return; }
+    if((m=x.match(/^\d+[.)]\s+(.*)$/))){ if(list!=="ol"){ close(); h+="<ol>"; list="ol"; } h+="<li>"+inl(m[1])+"</li>"; return; }
+    close();
+    if((m=x.match(/^#{1,4}\s+(.*)$/))||(m=x.match(/^\*\*([^*]+)\*\*:?$/))){ h+='<p class="h">'+m[1]+"</p>"; return; }
+    h+="<p>"+inl(x)+"</p>";
+  });
+  close(); return h;
+}
+var ERR={
+  not_granted:"No se concedió permiso para usar Claude en esta página. Puedes seguir trabajando con las verificaciones automáticas.",
+  rate_limited:"Hubo demasiadas solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+  cancelled:"Revisión detenida."
+};
+function ask(kind){
+  if(!sampleFn) return;
+  var sec=work.querySelector('[data-ai="'+kind+'"]'), out=sec.querySelector("[data-out]"), st=sec.querySelector("[data-status]"),
+      btn=sec.querySelector("[data-ask]"), stop=sec.querySelector("[data-stop]");
+  var why=canAsk(kind); if(why){ st.textContent=why; return; }
+  ctl[kind]=new AbortController();
+  btn.disabled=true; stop.hidden=false; out.innerHTML=""; st.textContent="Claude está leyendo tu trabajo…";
+  sampleFn(prompt(kind),{signal:ctl[kind].signal, onText:function(o){ st.textContent=""; out.innerHTML=md(o.text); }})
+  .then(function(r){ out.innerHTML=md(r.text); st.textContent=r.truncated?"La respuesta quedó incompleta. Vuelve a pedirla si la necesitas completa.":""; })
+  .catch(function(e){
+    var code=e&&e.code; if(e&&e.text) out.innerHTML=md(e.text); else if(code!=="cancelled") out.innerHTML="";
+    st.textContent=ERR[code]||("No se pudo obtener la revisión ("+(code||"error")+"). Inténtalo más tarde.");
+    if(code==="not_granted"){ sampleFn=null; work.querySelectorAll("[data-ai]").forEach(function(x){x.hidden=true;}); }
+  })
+  .finally(function(){ btn.disabled=false; stop.hidden=true; });
+}
+
+render();
+})();
+</script>
+</body>
+</html>
